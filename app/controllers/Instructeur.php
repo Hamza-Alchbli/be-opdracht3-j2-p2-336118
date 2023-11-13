@@ -14,42 +14,27 @@ class Instructeur extends BaseController
         $result = $this->instructeurModel->getInstructeurs();
 
         //  var_dump($result);
-        $rows = "";
-        foreach ($result as $instructeur) {
-            /**
-             * Datum in het juiste formaat gezet
-             */
-            $date = date_create($instructeur->DatumInDienst);
-            $formatted_date = date_format($date, 'd-m-Y');
-
-            $rows .= "<tr>
-                        <td>$instructeur->Voornaam</td>
-                        <td>$instructeur->Tussenvoegsel</td>
-                        <td>$instructeur->Achternaam</td>
-                        <td>$instructeur->Mobiel</td>
-                        <td>$formatted_date</td>            
-                        <td>$instructeur->AantalSterren</td>            
-                        <td>
-                            <a href='" . URLROOT . "/instructeur/overzichtvoertuigen/$instructeur->Id'>
-                                <i class='bi bi-car-front'></i>
-                            </a>
-                        </td>            
-                      </tr>";
-        }
 
         $data = [
             'title' => 'Instructeurs in dienst',
-            'rows' => $rows,
+            'rows' => $result,
             'totalInstructeurs' => count($result),
         ];
 
         $this->view('Instructeur/overzichtinstructeur', $data);
     }
 
-    public function overzichtVoertuigen($InstructeaurId,$message = '')
+    public function overzichtVoertuigen($InstructeaurId, $message = '')
     {
 
         $instructeurInfo = $this->instructeurModel->getInstructeurById($InstructeaurId);
+        $checkIfVoertuigIsAssigned = $this->instructeurModel->checkIfVoertuigIsAssigned($InstructeaurId);
+        var_dump($checkIfVoertuigIsAssigned);
+        // remove all voertuigen from instucteurs that does not match instructeurId 
+        if (empty($checkIfVoertuigIsAssigned)) {
+            $this->instructeurModel->removeAllVoertuigen($InstructeaurId);
+        }
+        // var_dump($instructeurInfo);
 
         // var_dump($instructeurInfo);
         $naam = $instructeurInfo->Voornaam . " " . $instructeurInfo->Tussenvoegsel . " " . $instructeurInfo->Achternaam;
@@ -61,17 +46,22 @@ class Instructeur extends BaseController
          */
         $result = $this->instructeurModel->getToegewezenVoertuigen($InstructeaurId);
 
-
         $tableRows = "";
-        if (empty($result)) {
+        if ($instructeurInfo->IsActief == 0) {
             /**
              * Als er geen toegewezen voertuigen zijn komt de onderstaande tekst in de tabel
              */
             $tableRows = "<tr>
-                            <td colspan='6'>
-                                Er zijn op dit moment nog geen voertuigen toegewezen aan deze instructeur
-                            </td>
-                          </tr>";
+            <td colspan='6'>
+                Deze instructeur is niet actief
+            </td>
+          </tr>";
+        } else if (empty($result)) {
+            $tableRows = "<tr>
+            <td colspan='6'>
+                Er zijn op dit moment nog geen voertuigen toegewezen aan deze instructeur
+            </td>
+          </tr>";
         } else {
             /**
              * Bouw de rows op in een foreach-loop en stop deze in de variabele
@@ -99,8 +89,24 @@ class Instructeur extends BaseController
                                         <a href='" . URLROOT . "/instructeur/overzichtvoertuigen_wijzig/$voertuig->Id/$InstructeaurId' class='m-4'>
                                             <i class='bi bi-pencil-square'></i>
                                         </a>
+                                    </td>
+                                    <td>
+                                    ";
+                foreach ($checkIfVoertuigIsAssigned as $checkVoertuig) {
 
-                                    </td>            
+
+                    if ($checkVoertuig->VoertuigId == $voertuig->Id) {
+                        $tableRows .=
+                            // echo yes or no if voertuig is assigned to two diffrent instructeur
+                            "yes";
+                    } else {
+                        $tableRows .=
+                            // echo yes or no if voertuig is assigned to two diffrent instructeur
+                             "no";
+                    }
+                }
+                $tableRows .= "
+                                    </td>
                             </tr>";
             }
         }
@@ -113,7 +119,8 @@ class Instructeur extends BaseController
             'datumInDienst' => $datumInDienst,
             'aantalSterren' => $aantalSterren,
             'instructeaurId' => $InstructeaurId,
-            'message' => $message
+            'message' => $message,
+            'instucteurInfo' => $instructeurInfo,
         ];
 
         $this->view('Instructeur/overzichtVoertuigen', $data);
@@ -155,7 +162,8 @@ class Instructeur extends BaseController
         // $this->overzichtVoertuigen($InstructeaurId, 'Het voertuig is verwijderd');
     }
 
-    function nietGebruiktVoertuigen($InstructeaurId) {
+    function nietGebruiktVoertuigen($InstructeaurId)
+    {
         $nietGebruiktVoeruigen = $this->instructeurModel->nietGebruiktVoertuig();
         $instructeurInfo = $this->instructeurModel->getInstructeurById($InstructeaurId);
 
@@ -174,8 +182,23 @@ class Instructeur extends BaseController
 
         $this->view('Instructeur/overzichtNietGebruiktVoertuigen', $data);
     }
-    function addNietGebruiktVoertuigen($Id, $InstructeaurId) {
+    function addNietGebruiktVoertuigen($Id, $InstructeaurId)
+    {
         $this->instructeurModel->addNietGebruiktVoertuigen($Id, $InstructeaurId);
-        $this->overzichtVoertuigen($InstructeaurId);
+        // $this->overzichtVoertuigen($InstructeaurId);
+        header("Location: " . URLROOT . "/Instructeur/overzichtVoertuigen/$InstructeaurId");
+    }
+
+    function ziekverlof($id)
+    {
+        $this->instructeurModel->ziekverlof($id);
+        $this->instructeurModel->removeAllVoertuigen($id);
+        header("Location: " . URLROOT . "/Instructeur/overzichtinstructeur");
+    }
+    function terugZiekverlof($id)
+    {
+        $this->instructeurModel->ziekverlof($id);
+        $this->instructeurModel->returnAllVoertuigen($id);
+        header("Location: " . URLROOT . "/Instructeur/overzichtinstructeur");
     }
 }

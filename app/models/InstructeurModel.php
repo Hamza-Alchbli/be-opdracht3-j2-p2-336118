@@ -18,6 +18,8 @@ class InstructeurModel
                       ,Mobiel
                       ,DatumInDienst
                       ,AantalSterren
+                      ,IsActief
+
                 FROM  Instructeur
                 ORDER BY AantalSterren DESC";
 
@@ -79,7 +81,8 @@ class InstructeurModel
         $this->db->query($sql);
         return $this->db->resultSet();
     }
-    function getToegewezenVoertuigNoInstructeur($voertuigId) {
+    function getToegewezenVoertuigNoInstructeur($voertuigId)
+    {
         $sql = "SELECT      VOER.Id
         ,VOER.Type
         ,VOER.Kenteken
@@ -107,6 +110,7 @@ class InstructeurModel
                       ,Achternaam
                       ,DatumInDienst
                       ,AantalSterren
+                      ,IsActief
                 FROM  Instructeur
                 WHERE Id = $Id";
 
@@ -115,7 +119,8 @@ class InstructeurModel
         return $this->db->single();
     }
 
-    function typeVoertuigen() {
+    function typeVoertuigen()
+    {
         $sql = "SELECT Id
                       ,TypeVoertuig
                       ,RijbewijsCategorie
@@ -147,7 +152,7 @@ class InstructeurModel
         // } catch (Exception $e) {
         //     echo "Error: " . $e->getMessage();
         // }
-       
+
     }
 
     function updateInstructeur($voertuigId)
@@ -174,16 +179,64 @@ class InstructeurModel
 
     function nietGebruiktVoertuig()
     {
-        $sql = "SELECT * FROM Voertuig WHERE Id NOT IN (SELECT VoertuigId FROM VoertuigInstructeur);";
+        $sql = "SELECT * FROM Voertuig WHERE Id NOT IN (SELECT VoertuigId FROM VoertuigInstructeur where IsActief = 1);";
         $this->db->query($sql);
         return $this->db->resultSet();
     }
     function addNietGebruiktVoertuigen($voertuigId, $InstructeaurId)
     {
-        $sql = "INSERT INTO VoertuigInstructeur (VoertuigId, InstructeurId) VALUES (:voertuigId, :instructeurId)";
+        $sql = "INSERT INTO 
+                VoertuigInstructeur (VoertuigId, InstructeurId, DatumToekenning, IsActief, Opmerkingen, DatumAangemaakt, DatumGewijzigd) 
+                VALUES (:voertuigId, :instructeurId,SYSDATE(6), 1, Null, SYSDATE(6), SYSDATE(6))";
         $this->db->query($sql);
         $this->db->bind(':voertuigId', $voertuigId);
         $this->db->bind(':instructeurId', $InstructeaurId);
+        return $this->db->resultSet();
+    }
+    function ziekverlof($id)
+    {
+        $sql = "UPDATE Instructeur SET IsActief = !IsActief WHERE Id = $id";
+        $this->db->query($sql);
+        return $this->db->resultSet();
+    }
+    function removeAllVoertuigen($id)
+    {
+        $sql = "UPDATE VoertuigInstructeur SET IsActief = 0 WHERE InstructeurId = $id";
+        $this->db->query($sql);
+        return $this->db->resultSet();
+    }
+    function returnAllVoertuigen($id)
+    {
+        $sql = "UPDATE VoertuigInstructeur SET IsActief = 1 WHERE InstructeurId = $id";
+        $this->db->query($sql);
+        return $this->db->resultSet();
+    }
+    // a function to check if there is a voertuig assigned to two different instructeurs using sub query
+    function checkIfVoertuigIsAssigned($id)
+    {
+        $sql = "SELECT
+        VoertuigId,
+        GROUP_CONCAT(InstructeurId) AS InstructeurIds
+    FROM
+        VoertuigInstructeur
+    WHERE
+        IsActief = 1
+        AND VoertuigId IN (
+            SELECT
+                VoertuigId
+            FROM
+                VoertuigInstructeur
+            WHERE
+                IsActief = 1
+                AND InstructeurId = $id
+        )
+    GROUP BY
+        VoertuigId
+    HAVING
+        COUNT(DISTINCT InstructeurId) > 1;
+    
+    ";
+        $this->db->query($sql);
         return $this->db->resultSet();
     }
 }

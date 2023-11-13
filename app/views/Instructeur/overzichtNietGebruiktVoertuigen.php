@@ -47,6 +47,14 @@
             </tr>
         </thead>
         <tbody>
+            <!-- check if $data['result'] contains 1 row -->
+            <?php 
+            // var_dump($data);
+            if (count($data['result']) == 0) : ?>
+                <tr>
+                    <td class="py-2 px-4 border-b" colspan="6">No vehicles found</td>
+                </tr>
+            <?php endif; ?>
             <?php foreach ($data['result'] as $voertuigInfo) : ?>
                 <tr>
                     <td class="py-2 px-4 border-b"><?= $voertuigInfo->Kenteken ?></td>
