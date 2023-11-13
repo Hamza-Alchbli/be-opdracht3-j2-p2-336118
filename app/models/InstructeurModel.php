@@ -234,7 +234,6 @@ class InstructeurModel
         VoertuigId
     HAVING
         COUNT(DISTINCT InstructeurId) > 1;
-    
     ";
         $this->db->query($sql);
         return $this->db->resultSet();
