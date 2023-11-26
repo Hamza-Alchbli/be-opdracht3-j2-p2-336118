@@ -29,7 +29,7 @@ class Instructeur extends BaseController
 
         $instructeurInfo = $this->instructeurModel->getInstructeurById($InstructeaurId);
         $checkIfVoertuigIsAssigned = $this->instructeurModel->checkIfVoertuigIsAssigned($InstructeaurId);
-        
+
         $naam = $instructeurInfo->Voornaam . " " . $instructeurInfo->Tussenvoegsel . " " . $instructeurInfo->Achternaam;
         $datumInDienst = $instructeurInfo->DatumInDienst;
         $aantalSterren = $instructeurInfo->AantalSterren;
@@ -190,14 +190,27 @@ class Instructeur extends BaseController
 
     function ziekverlof($id)
     {
+        $instructeurInfo = $this->instructeurModel->getInstructeurById($id);
+        $naam = $instructeurInfo->Voornaam . " " . $instructeurInfo->Tussenvoegsel . " " . $instructeurInfo->Achternaam;
         $this->instructeurModel->ziekverlof($id);
         $this->instructeurModel->removeAllVoertuigen($id);
-        header("Location: " . URLROOT . "/Instructeur/overzichtinstructeur");
+        // wait for 2 seconds and say that the instructeur is ziek or verlof
+        echo "<div class='alert alert-success' role='alert'>
+                $naam is ziek of op verlof
+              </div>";
+
+        header("refresh:2;url=" . URLROOT . "/instructeur/overzichtinstructeur");
     }
     function terugZiekverlof($id)
     {
+        $instructeurInfo = $this->instructeurModel->getInstructeurById($id);
+        $naam = $instructeurInfo->Voornaam . " " . $instructeurInfo->Tussenvoegsel . " " . $instructeurInfo->Achternaam;
         $this->instructeurModel->ziekverlof($id);
         $this->instructeurModel->returnAllVoertuigen($id);
-        header("Location: " . URLROOT . "/Instructeur/overzichtinstructeur");
+        // wait for 2 seconds and say that the instructeur is ziek or verlof
+        echo "<div class='alert alert-success' role='alert'>
+                $naam is terug
+              </div>";
+        header("refresh:2;url=" . URLROOT . "/instructeur/overzichtinstructeur");
     }
 }
