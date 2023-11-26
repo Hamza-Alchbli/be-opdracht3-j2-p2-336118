@@ -29,14 +29,7 @@ class Instructeur extends BaseController
 
         $instructeurInfo = $this->instructeurModel->getInstructeurById($InstructeaurId);
         $checkIfVoertuigIsAssigned = $this->instructeurModel->checkIfVoertuigIsAssigned($InstructeaurId);
-        var_dump($checkIfVoertuigIsAssigned);
-        // remove all voertuigen from instucteurs that does not match instructeurId 
-        if (empty($checkIfVoertuigIsAssigned)) {
-            $this->instructeurModel->removeAllVoertuigen($InstructeaurId);
-        }
-        // var_dump($instructeurInfo);
-
-        // var_dump($instructeurInfo);
+        
         $naam = $instructeurInfo->Voornaam . " " . $instructeurInfo->Tussenvoegsel . " " . $instructeurInfo->Achternaam;
         $datumInDienst = $instructeurInfo->DatumInDienst;
         $aantalSterren = $instructeurInfo->AantalSterren;
@@ -92,22 +85,28 @@ class Instructeur extends BaseController
                                     </td>
                                     <td>
                                     ";
-                foreach ($checkIfVoertuigIsAssigned as $checkVoertuig) {
+                if (empty($checkIfVoertuigIsAssigned)) {
+                    $tableRows .=
+                        "<p>
+                            ❌
+                        </p>";
+                } else {
+                    foreach ($checkIfVoertuigIsAssigned as $checkVoertuig) {
 
 
-                    if ($checkVoertuig->VoertuigId == $voertuig->Id) {
-                        $tableRows .=
-                            // echo yes or no if voertuig is assigned to two diffrent instructeur
-                            "yes";
-                    } else {
-                        $tableRows .=
-                            // echo yes or no if voertuig is assigned to two diffrent instructeur
-                             "no";
+                        if ($checkVoertuig->VoertuigId == $voertuig->Id) {
+                            $instructeurIds = explode(',', $checkVoertuig->InstructeurIds);
+                            foreach ($instructeurIds as $instructeur) {
+                                if ($instructeur != $InstructeaurId) {
+                                    $tableRows .=
+                                        "<a href='" . URLROOT . "/instructeur/voertuigDelete/$checkVoertuig->VoertuigId/$instructeur'>
+                                            ✅
+                                        </a>";
+                                }
+                            }
+                        }
                     }
                 }
-                $tableRows .= "
-                                    </td>
-                            </tr>";
             }
         }
 
