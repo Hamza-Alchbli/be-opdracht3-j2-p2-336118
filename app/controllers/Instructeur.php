@@ -151,10 +151,12 @@ class Instructeur extends BaseController
 
     function voertuigDelete($Id, $InstructeaurId)
     {
-        $this->instructeurModel->deleteVoertuig($Id);
+        $instructeurInfo = $this->instructeurModel->getInstructeurById($InstructeaurId);
+        $naam = $instructeurInfo->Voornaam . " " . $instructeurInfo->Tussenvoegsel . " " . $instructeurInfo->Achternaam;
+        $this->instructeurModel->deleteVoertuig($Id, $InstructeaurId);
         // show message and wait for 2 seconds
         echo "<div class='alert alert-success' role='alert'>
-                Voertuig is verwijderd
+                Voertuig is verwijderd van $naam
               </div>";
 
         header("refresh:2;url=" . URLROOT . "/instructeur/overzichtvoertuigen/$InstructeaurId");
@@ -196,7 +198,7 @@ class Instructeur extends BaseController
         $this->instructeurModel->removeAllVoertuigen($id);
         // wait for 2 seconds and say that the instructeur is ziek or verlof
         echo "<div class='alert alert-success' role='alert'>
-                $naam is ziek of op verlof
+                $naam is ziek/met verlof gemeld
               </div>";
 
         header("refresh:2;url=" . URLROOT . "/instructeur/overzichtinstructeur");
